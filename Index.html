@@ -1,0 +1,1442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LHDN Tax Relief Tracker</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root{
+      --ink:#0b1e2d;--navy:#0d2847;--navy-mid:#163860;--navy-lite:#1e4f80;
+      --gold:#c59a30;--gold-lt:#e8c060;--gold-pale:#fdf7e6;
+      --teal:#0e7a7a;--teal-lt:#13a0a0;
+      --red:#bf3030;--red-pale:#fef0f0;
+      --green:#197a48;--green-pale:#edf8f2;
+      --violet:#5c35a0;--violet-pale:#f0ecff;
+      --orange:#c06010;--orange-pale:#fff5eb;
+      --surface:#f2f5f9;--card:#fff;--border:#d5dde8;
+      --txt:#0e1e2e;--txt-mid:#4a6070;--txt-lite:#8099ae;
+      --r:14px;--r-lg:20px;
+      --sh-sm:0 1px 4px rgba(11,30,45,.07);--sh-md:0 4px 20px rgba(11,30,45,.11);--sh-lg:0 12px 48px rgba(11,30,45,.18);
+      --ff-h:'Playfair Display',Georgia,serif;--ff-b:'Outfit',system-ui,sans-serif;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:var(--ff-b);background:var(--surface);color:var(--txt);min-height:100vh}
+
+    /* Overlay */
+    #overlay{position:fixed;inset:0;z-index:9999;background:rgba(11,30,45,.52);backdrop-filter:blur(4px);
+      display:flex;align-items:center;justify-content:center;opacity:0;visibility:hidden;transition:opacity .2s,visibility .2s}
+    #overlay.show{opacity:1;visibility:visible}
+    .ov-box{background:#fff;border-radius:18px;padding:2rem 2.5rem;text-align:center;
+      box-shadow:var(--sh-lg);animation:pop-in .22s cubic-bezier(.34,1.56,.64,1);min-width:260px}
+    @keyframes pop-in{from{transform:scale(.88);opacity:0}to{transform:scale(1);opacity:1}}
+    .ov-spin{width:2.4rem;height:2.4rem;border:3px solid var(--border);border-top-color:var(--teal);
+      border-radius:50%;animation:spin .7s linear infinite;margin:0 auto .8rem}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .ov-box p{font-weight:600;color:var(--navy);font-size:.9rem;margin:0}
+    .ov-steps{display:flex;gap:.5rem;justify-content:center;margin-top:.75rem}
+    .ov-step{width:8px;height:8px;border-radius:50%;background:var(--border)}
+    .ov-step.done{background:var(--green)}.ov-step.active{background:var(--teal);animation:ps .8s ease infinite}
+    @keyframes ps{0%,100%{transform:scale(1)}50%{transform:scale(1.35)}}
+
+    /* ── Login Screen ── */
+    #login-screen{position:fixed;inset:0;z-index:8000;
+      background:linear-gradient(135deg,var(--ink) 0%,var(--navy) 60%,var(--navy-mid) 100%);
+      display:flex;align-items:center;justify-content:center;
+      opacity:0;visibility:hidden;transition:opacity .25s,visibility .25s}
+    #login-screen.show{opacity:1;visibility:visible}
+    #login-screen::before{content:"";position:absolute;inset:0;pointer-events:none;
+      background:radial-gradient(ellipse 60% 80% at 80% 30%,rgba(197,154,48,.14) 0%,transparent 65%),
+                 radial-gradient(ellipse 40% 60% at 10% 70%,rgba(14,122,122,.10) 0%,transparent 60%)}
+    .login-card{position:relative;z-index:1;background:rgba(255,255,255,.07);
+      border:1px solid rgba(255,255,255,.15);border-radius:24px;
+      padding:2.5rem 2rem;width:100%;max-width:400px;
+      backdrop-filter:blur(12px);box-shadow:0 20px 60px rgba(0,0,0,.4);
+      animation:pop-in .3s cubic-bezier(.34,1.56,.64,1)}
+    .login-logo{width:60px;height:60px;border-radius:50%;
+      background:linear-gradient(135deg,rgba(197,154,48,.3) 0%,rgba(197,154,48,.1) 100%);
+      border:1.5px solid rgba(197,154,48,.5);
+      display:flex;align-items:center;justify-content:center;
+      margin:0 auto 1.25rem;font-size:1.6rem;color:var(--gold-lt)}
+    .login-title{font-family:var(--ff-h);font-size:1.5rem;color:#fff;text-align:center;margin-bottom:.3rem}
+    .login-sub{font-size:.82rem;color:rgba(255,255,255,.5);text-align:center;margin-bottom:1.75rem}
+    .login-label{font-size:.72rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+      color:rgba(255,255,255,.55);margin-bottom:.4rem;display:block}
+    .login-input{width:100%;border:1.5px solid rgba(255,255,255,.2);border-radius:var(--r);
+      padding:.7rem 1rem;font-family:var(--ff-b);font-size:.95rem;
+      background:rgba(255,255,255,.08);color:#fff;
+      transition:border-color .15s,background .15s;outline:none}
+    .login-input:focus{border-color:var(--gold);background:rgba(255,255,255,.12)}
+    .login-input::placeholder{color:rgba(255,255,255,.3)}
+    .login-input-group{margin-bottom:.9rem}
+    .login-btn{width:100%;margin-top:.5rem;
+      background:linear-gradient(135deg,var(--gold) 0%,#a07820 100%);
+      color:var(--ink);border:none;border-radius:var(--r);
+      padding:.78rem 1rem;font-family:var(--ff-b);font-weight:700;font-size:.95rem;
+      cursor:pointer;transition:opacity .15s,transform .15s}
+    .login-btn:hover:not(:disabled){opacity:.9;transform:translateY(-1px)}
+    .login-btn:disabled{opacity:.55;cursor:not-allowed}
+    .login-err{margin-top:.8rem;padding:.55rem .9rem;border-radius:10px;
+      background:rgba(191,48,48,.25);border:1px solid rgba(191,48,48,.4);
+      color:#ffaaaa;font-size:.82rem;display:none;animation:sl .2s ease}
+    @keyframes sl{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+    .login-open-note{margin-top:.9rem;padding:.6rem .9rem;border-radius:10px;text-align:center;
+      background:rgba(197,154,48,.12);border:1px solid rgba(197,154,48,.25);
+      color:var(--gold-lt);font-size:.78rem;line-height:1.5}
+    .login-divider{display:flex;align-items:center;gap:.75rem;margin:.5rem 0;color:rgba(255,255,255,.25);font-size:.75rem}
+    .login-divider::before,.login-divider::after{content:"";flex:1;border-top:1px solid rgba(255,255,255,.15)}
+    /* First-time setup panel inside login card */
+    .setup-panel{margin-top:.9rem;padding:1rem;border-radius:12px;
+      background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12)}
+    .setup-panel-title{font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+      color:rgba(255,255,255,.45);margin-bottom:.75rem;display:flex;align-items:center;gap:.4rem}
+    .setup-panel-title::after{content:"";flex:1;border-top:1px solid rgba(255,255,255,.12)}
+    .login-btn-ghost{width:100%;margin-top:.5rem;background:rgba(255,255,255,.07);
+      color:rgba(255,255,255,.55);border:1.5px solid rgba(255,255,255,.15);border-radius:var(--r);
+      padding:.65rem 1rem;font-family:var(--ff-b);font-weight:600;font-size:.88rem;
+      cursor:pointer;transition:background .15s,color .15s}
+    .login-btn-ghost:hover{background:rgba(255,255,255,.12);color:rgba(255,255,255,.8)}
+
+    /* Toast */
+    .toast-container{z-index:1090}
+    .my-toast{border:none;border-radius:12px;box-shadow:var(--sh-lg);min-width:280px;max-width:400px;font-size:.86rem;font-family:var(--ff-b)}
+    .my-toast.ok{background:var(--green);color:#fff}
+    .my-toast.err{background:var(--red);color:#fff}
+    .my-toast.warn{background:var(--orange);color:#fff}
+
+    /* Header */
+    .app-hdr{background:linear-gradient(135deg,var(--ink) 0%,var(--navy) 55%,var(--navy-mid) 100%);position:relative;overflow:hidden}
+    .app-hdr::before{content:"";position:absolute;inset:0;pointer-events:none;
+      background:radial-gradient(ellipse 55% 90% at 90% 40%,rgba(197,154,48,.16) 0%,transparent 65%),
+                 radial-gradient(ellipse 35% 60% at 5% 70%,rgba(14,122,122,.12) 0%,transparent 60%)}
+    .app-hdr::after{content:"";position:absolute;bottom:-1px;left:0;right:0;height:36px;background:var(--surface);clip-path:ellipse(60% 100% at 50% 100%)}
+    .hdr-inner{position:relative;z-index:1;padding:1.6rem 1.5rem 2.8rem}
+    .hdr-pill{display:inline-flex;align-items:center;gap:.5rem;background:rgba(197,154,48,.18);
+      border:1px solid rgba(197,154,48,.35);color:var(--gold-lt);font-size:.7rem;font-weight:700;
+      letter-spacing:.1em;text-transform:uppercase;padding:.28rem .8rem;border-radius:50px;margin-bottom:.75rem}
+    .hdr-pill .dot{width:6px;height:6px;border-radius:50%;background:var(--gold);animation:blink 2s ease infinite}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+    .hdr-title{font-family:var(--ff-h);font-size:clamp(1.6rem,5vw,2.3rem);color:#fff;line-height:1.15;margin-bottom:.4rem}
+    .hdr-title span{color:var(--gold-lt)}
+    .hdr-sub{color:rgba(255,255,255,.55);font-size:.85rem}
+    .folder-strip{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;background:rgba(255,255,255,.07);
+      border:1px solid rgba(255,255,255,.13);border-radius:10px;padding:.5rem .9rem;margin-top:1rem;font-size:.78rem;color:rgba(255,255,255,.7)}
+    .folder-strip a{color:var(--gold-lt);text-decoration:none;font-weight:600}
+    .folder-strip a:hover{color:#fff}
+
+    /* YA Bar */
+    .ya-bar{background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;
+      padding:.65rem 1.25rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;box-shadow:var(--sh-sm)}
+    .ya-label{font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--txt-lite);white-space:nowrap;margin-right:.25rem}
+    .ya-pills{display:flex;gap:.4rem;flex-wrap:wrap;flex:1}
+    .ya-pill{display:inline-flex;align-items:center;gap:.35rem;background:#f0f5fb;border:1.5px solid var(--border);
+      color:var(--txt-mid);font-size:.82rem;font-weight:600;padding:.32rem .85rem;border-radius:50px;cursor:pointer;transition:background .15s}
+    .ya-pill:hover{background:#e4edf8;color:var(--navy)}
+    .ya-pill.active{background:var(--navy);border-color:var(--navy);color:#fff;box-shadow:0 3px 10px rgba(13,40,71,.25)}
+    .ya-pill .dot-a{width:6px;height:6px;border-radius:50%;background:var(--gold-lt);display:none}
+    .ya-pill.active .dot-a{display:block}
+    .btn-new-ya{display:inline-flex;align-items:center;gap:.35rem;background:var(--gold-pale);
+      border:1.5px dashed var(--gold);color:var(--gold);font-size:.82rem;font-weight:700;
+      padding:.32rem .9rem;border-radius:50px;cursor:pointer}
+    .btn-new-ya:hover{background:#f8eccc;color:#9a6610}
+    .btn-logout{display:inline-flex;align-items:center;gap:.35rem;background:none;
+      border:1.5px solid var(--border);color:var(--txt-lite);font-size:.82rem;font-weight:600;
+      padding:.32rem .85rem;border-radius:50px;cursor:pointer;transition:background .15s,border-color .15s,color .15s;
+      font-family:var(--ff-b)}
+    .btn-logout:hover{background:var(--red-pale);border-color:#f0b8b8;color:var(--red)}
+
+    /* Tabs */
+    .main-tabs{display:flex;gap:.35rem;padding:1rem 1.25rem .5rem;flex-wrap:wrap}
+    .tab-btn{display:inline-flex;align-items:center;gap:.4rem;background:none;border:none;border-radius:50px;
+      font-family:var(--ff-b);font-size:.84rem;font-weight:600;color:var(--txt-lite);padding:.42rem 1rem;cursor:pointer;transition:background .15s,color .15s}
+    .tab-btn:hover{background:#e8eef6;color:var(--navy)}
+    .tab-btn.active{background:var(--navy);color:#fff}
+
+    /* Cards */
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--sh-sm)}
+    .card-hdr{background:linear-gradient(135deg,var(--navy) 0%,var(--navy-mid) 100%);
+      border-radius:var(--r-lg) var(--r-lg) 0 0;padding:.9rem 1.2rem;display:flex;align-items:center;gap:.75rem}
+    .card-hdr .ico{width:34px;height:34px;border-radius:50%;background:rgba(197,154,48,.22);
+      display:inline-flex;align-items:center;justify-content:center;color:var(--gold-lt);font-size:.95rem}
+    .card-hdr .ttl{color:#fff;font-weight:700;font-size:.93rem}
+    .card-hdr .sub{color:rgba(255,255,255,.55);font-size:.72rem}
+
+    /* Forms */
+    .form-label{font-size:.77rem;font-weight:700;letter-spacing:.03em;color:var(--txt-mid);margin-bottom:.32rem}
+    .form-control,.form-select{border:1.5px solid var(--border);border-radius:var(--r);padding:.6rem .88rem;
+      font-family:var(--ff-b);font-size:.88rem;color:var(--txt);background:#f8fafd;transition:border-color .15s,background .15s}
+    .form-control:focus,.form-select:focus{border-color:var(--navy-mid);box-shadow:0 0 0 3px rgba(22,56,96,.14);background:#fff;outline:none}
+    .form-control::placeholder{color:var(--txt-lite)}
+    .limit-info{display:none;border-radius:10px;padding:.6rem .9rem;font-size:.8rem;font-weight:500;border:1.5px solid;margin-top:.45rem}
+    .limit-info.ok{background:var(--green-pale);border-color:#b0ddc5;color:var(--green)}
+    .limit-info.warn{background:var(--red-pale);border-color:#f0b8b8;color:var(--red)}
+    .btn-submit{background:linear-gradient(135deg,var(--navy) 0%,var(--navy-lite) 100%);color:#fff;border:none;
+      border-radius:var(--r);padding:.7rem 1.5rem;font-family:var(--ff-b);font-weight:700;font-size:.9rem;
+      cursor:pointer;transition:opacity .15s,transform .15s,box-shadow .15s;width:100%}
+    .btn-submit:hover:not(:disabled){opacity:.9;transform:translateY(-1px);box-shadow:var(--sh-md)}
+    .btn-submit:disabled{opacity:.55;cursor:not-allowed}
+
+    /* Upload Zone */
+    .upload-zone{border:2px dashed var(--border);border-radius:var(--r);padding:1.4rem 1rem;text-align:center;
+      cursor:pointer;background:#f8fafd;position:relative;transition:border-color .2s,background .2s}
+    .upload-zone:hover,.upload-zone.drag-over{border-color:var(--navy-mid);background:#eef4fc}
+    .upload-zone.has-file{border-style:solid;border-color:var(--teal);background:#f0fbfb;cursor:default}
+    .upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+    .upload-zone.has-file input[type=file]{display:none}
+    .uz-idle{pointer-events:none}
+    .uz-icon{font-size:2rem;color:var(--txt-lite);margin-bottom:.5rem;display:block}
+    .uz-title{font-weight:600;font-size:.88rem;color:var(--txt-mid)}
+    .uz-sub{font-size:.75rem;color:var(--txt-lite);margin-top:.2rem}
+    .uz-preview{display:flex;align-items:center;gap:1rem;text-align:left}
+    .uz-thumb{width:68px;height:68px;border-radius:10px;object-fit:cover;flex-shrink:0;border:1px solid var(--border)}
+    .uz-pdf-icon{width:68px;height:68px;border-radius:10px;background:var(--red-pale);border:1px solid #f0b8b8;
+      display:flex;align-items:center;justify-content:center;color:var(--red);font-size:1.8rem;flex-shrink:0}
+    .uz-info{flex:1;min-width:0}
+    .uz-fname{font-weight:600;font-size:.84rem;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .uz-fsize{font-size:.74rem;color:var(--txt-lite);margin-top:.15rem}
+    .uz-status{font-size:.75rem;font-weight:600;color:var(--teal);margin-top:.2rem}
+    .uz-status.warn{color:var(--red)}
+    .btn-clear-file{background:var(--red-pale);border:1px solid #f0b8b8;color:var(--red);border-radius:8px;
+      padding:.25rem .6rem;font-size:.75rem;cursor:pointer;flex-shrink:0;font-family:var(--ff-b);font-weight:600;display:flex;align-items:center;gap:.25rem}
+    .btn-clear-file:hover{background:#fde0de}
+    .upload-label-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:.32rem}
+    .badge-opt{font-size:.67rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+      background:#eef2f8;color:var(--txt-lite);border:1px solid var(--border);border-radius:50px;padding:.1rem .5rem}
+
+    /* Stats */
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:.85rem;margin-bottom:1.25rem}
+    .stat-box{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:.9rem 1rem;text-align:center;box-shadow:var(--sh-sm)}
+    .stat-box .sv{font-family:var(--ff-h);font-size:1.45rem;line-height:1.1;color:var(--navy)}
+    .stat-box .sv.gold{color:var(--gold)}.stat-box .sv.teal{color:var(--teal)}
+    .stat-box .sl{font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--txt-lite);margin-top:.3rem}
+
+    /* Relief table */
+    .rel-table{width:100%;border-collapse:separate;border-spacing:0;font-size:.83rem}
+    .rel-table thead th{background:var(--navy);color:rgba(255,255,255,.82);font-weight:700;font-size:.7rem;
+      letter-spacing:.07em;text-transform:uppercase;padding:.7rem .9rem;position:sticky;top:0;z-index:2}
+    .rel-table thead th:first-child{border-radius:12px 0 0 0}.rel-table thead th:last-child{border-radius:0 12px 0 0}
+    .rel-table tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+    .rel-table tbody tr:hover{background:#f2f8ff}
+    .rel-table tbody td{padding:.72rem .9rem;vertical-align:middle}
+    .rel-table tbody tr:last-child td{border-bottom:none}
+    .prog-wrap{height:7px;border-radius:50px;background:var(--border);overflow:hidden;min-width:70px;margin-top:3px}
+    .prog-fill{height:100%;border-radius:50px;background:linear-gradient(90deg,var(--teal) 0%,var(--teal-lt) 100%);transition:width .6s cubic-bezier(.4,0,.2,1)}
+    .prog-fill.over{background:linear-gradient(90deg,var(--gold) 0%,#d0920a 100%)}
+    .claim-badge{display:inline-block;border-radius:7px;padding:.13rem .5rem;font-weight:700;font-size:.82rem;background:var(--green-pale);color:var(--green);border:1px solid #a0dbb8}
+    .claim-badge.capped{background:var(--gold-pale);color:#7a5500;border-color:#d4aa50}
+    .type-chip{font-size:.68rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border-radius:50px;padding:.1rem .5rem;display:inline-block}
+    .type-chip.builtin{background:#eef3fb;color:var(--navy-mid);border:1px solid #c0d0e8}
+    .type-chip.custom{background:var(--orange-pale);color:var(--orange);border:1px solid #f0c888}
+    .btn-edit-cat{background:none;border:1.5px solid var(--border);color:var(--txt-mid);border-radius:8px;padding:.18rem .48rem;font-size:.73rem;cursor:pointer}
+    .btn-edit-cat:hover{background:#eef3fb;border-color:var(--navy-mid);color:var(--navy)}
+
+    /* History table */
+    .hist-table{font-size:.82rem;width:100%;border-collapse:separate;border-spacing:0}
+    .hist-table thead th{background:#f0f4f8;color:var(--txt-mid);font-weight:700;font-size:.7rem;
+      letter-spacing:.07em;text-transform:uppercase;padding:.6rem .88rem;border-bottom:1px solid var(--border)}
+    .hist-table tbody tr{border-bottom:1px solid #eef1f6;transition:background .1s}
+    .hist-table tbody tr:hover{background:#f6f9ff}
+    .hist-table tbody td{padding:.62rem .88rem;vertical-align:middle}
+    .hist-table tbody tr:last-child td{border-bottom:none}
+    .cat-tag{display:inline-block;background:#edf2fb;color:var(--navy-mid);border:1px solid #c0d0e8;
+      border-radius:50px;padding:.12rem .6rem;font-size:.73rem;font-weight:600;white-space:nowrap}
+    .btn-del{background:none;border:1.5px solid #e0b8b8;color:#be3030;border-radius:8px;padding:.18rem .48rem;font-size:.73rem;cursor:pointer}
+    .btn-del:hover{background:var(--red-pale)}
+    .btn-preview{display:inline-flex;align-items:center;gap:.3rem;background:var(--violet-pale);
+      border:1px solid #cbb8e8;color:var(--violet);border-radius:7px;padding:.18rem .6rem;
+      font-size:.76rem;font-weight:600;cursor:pointer;white-space:nowrap;font-family:var(--ff-b)}
+    .btn-preview:hover{background:#e4d8ff}
+    .no-receipt{color:var(--txt-lite);font-size:.75rem}
+
+    /* Preview modal */
+    #previewModal .modal-body{background:#111;border-radius:0 0 var(--r-lg) var(--r-lg);padding:0;overflow:hidden;
+      min-height:200px;display:flex;align-items:center;justify-content:center;flex-direction:column}
+    .prev-img{max-width:100%;max-height:80vh;display:block;object-fit:contain}
+    .prev-pdf{width:100%;height:75vh;border:none}
+    .prev-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;color:rgba(255,255,255,.6);font-size:.88rem;gap:.75rem;padding:3rem}
+    .prev-loading .ov-spin{border-color:rgba(255,255,255,.2);border-top-color:#fff}
+    .prev-toolbar{display:flex;align-items:center;justify-content:space-between;padding:.55rem 1rem;
+      background:rgba(0,0,0,.5);color:rgba(255,255,255,.75);font-size:.78rem;border-radius:0 0 var(--r-lg) var(--r-lg);gap:.5rem;flex-shrink:0}
+    .prev-toolbar a{color:var(--gold-lt);text-decoration:none;font-weight:600;white-space:nowrap}
+    .prev-toolbar a:hover{color:#fff}
+    #previewModal .modal-content{background:#000}
+    #previewModal .modal-header{padding:.7rem 1rem}
+
+    /* Security */
+    .sec-status{display:flex;align-items:center;gap:.75rem;padding:1rem 1.25rem;border-radius:var(--r-lg);border:1.5px solid;font-size:.85rem;margin-bottom:1.25rem}
+    .sec-status.secured{background:var(--green-pale);border-color:#a0ddb8;color:var(--green)}
+    .sec-status.partial{background:#eef3fb;border-color:#c0d0e8;color:var(--navy-mid)}
+    .sec-status.open{background:var(--orange-pale);border-color:#f0c888;color:var(--orange)}
+    .sec-status .ico-big{font-size:1.8rem;flex-shrink:0}
+    .email-chip{display:inline-flex;align-items:center;gap:.4rem;background:#eef3fb;border:1px solid #c0d0e8;
+      border-radius:8px;padding:.3rem .75rem;font-size:.83rem;font-weight:500;color:var(--navy-mid);margin:.25rem}
+    .email-chip button{background:none;border:none;color:var(--red);cursor:pointer;font-size:.9rem;padding:0 0 0 .25rem}
+    .info-box{background:#f8fafd;border:1px solid var(--border);border-radius:var(--r);padding:1rem 1.1rem;font-size:.82rem;color:var(--txt-mid)}
+    .info-box h6{font-size:.82rem;font-weight:700;color:var(--navy);margin-bottom:.5rem}
+    .info-box ol{padding-left:1.2rem;margin:0}
+    .info-box li{margin-bottom:.35rem;line-height:1.5}
+    .info-box code{background:#e8edf5;border-radius:4px;padding:.1rem .4rem;font-size:.78rem;color:var(--navy)}
+    .section-divider{border:none;border-top:1px solid var(--border);margin:1.5rem 0}
+
+    /* Confirm modal */
+    #confirmModal .modal-content{border-radius:var(--r-lg);border:none;box-shadow:var(--sh-lg);font-family:var(--ff-b);overflow:hidden}
+    .confirm-icon-wrap{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:1.5rem}
+    .confirm-icon-wrap.danger{background:var(--red-pale);color:var(--red);border:2px solid #f0b8b8}
+    .confirm-icon-wrap.warning{background:var(--orange-pale);color:var(--orange);border:2px solid #f0c888}
+    .confirm-icon-wrap.info{background:#eef3fb;color:var(--navy-mid);border:2px solid #c0d0e8}
+    #confirmModal .modal-body{padding:2rem 1.75rem 1.25rem;text-align:center}
+    #confirmModal .confirm-title{font-family:var(--ff-h);font-size:1.15rem;color:var(--navy);margin-bottom:.5rem;font-weight:700}
+    #confirmModal .confirm-msg{font-size:.88rem;color:var(--txt-mid);line-height:1.6;margin:0}
+    #confirmModal .confirm-detail{font-size:.78rem;color:var(--txt-lite);margin-top:.65rem;padding:.5rem .75rem;background:#f5f7fa;border-radius:8px;border:1px solid var(--border)}
+    #confirmModal .modal-footer{padding:.75rem 1.75rem 1.5rem;border:none;justify-content:center;gap:.75rem}
+    .btn-cc{background:#f0f4f8;border:1.5px solid var(--border);color:var(--txt-mid);border-radius:var(--r);padding:.6rem 1.4rem;font-family:var(--ff-b);font-weight:600;font-size:.88rem;cursor:pointer}
+    .btn-cc:hover{background:#e4edf8;color:var(--navy)}
+    .btn-co{border:none;border-radius:var(--r);padding:.6rem 1.6rem;font-family:var(--ff-b);font-weight:700;font-size:.88rem;cursor:pointer;transition:opacity .15s}
+    .btn-co:hover{opacity:.88}
+    .btn-co.danger{background:linear-gradient(135deg,var(--red) 0%,#d44040 100%);color:#fff}
+    .btn-co.warning{background:linear-gradient(135deg,var(--orange) 0%,#e07020 100%);color:#fff}
+    .btn-co.info{background:linear-gradient(135deg,var(--navy) 0%,var(--navy-lite) 100%);color:#fff}
+
+    /* Misc */
+    .empty{text-align:center;padding:3rem 1rem;color:var(--txt-lite)}
+    .empty i{font-size:2.4rem;margin-bottom:.65rem;display:block}
+    .empty p{font-size:.87rem}
+    #welcome-screen{max-width:560px;margin:3rem auto;padding:0 1rem}
+    .welcome-card{background:var(--card);border:1px solid var(--border);border-radius:24px;box-shadow:var(--sh-md);padding:2.5rem 2rem;text-align:center}
+    .welcome-icon{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--navy) 0%,var(--navy-lite) 100%);display:flex;align-items:center;justify-content:center;font-size:2rem;margin:0 auto 1.25rem;color:var(--gold-lt)}
+    .welcome-card h2{font-family:var(--ff-h);font-size:1.5rem;color:var(--navy);margin-bottom:.5rem}
+    .welcome-card p{color:var(--txt-mid);font-size:.9rem;margin-bottom:1.5rem}
+    .fallback-note{background:#fffbe6;border:1px solid #f0d060;border-radius:10px;padding:.55rem .9rem;font-size:.78rem;color:#7a5a00;margin-bottom:1rem}
+    .modal-content{border-radius:var(--r-lg);border:none;box-shadow:var(--sh-lg);font-family:var(--ff-b)}
+    .modal-header{background:linear-gradient(135deg,var(--navy) 0%,var(--navy-mid) 100%);border-radius:var(--r-lg) var(--r-lg) 0 0;padding:1rem 1.25rem}
+    .modal-title{color:#fff;font-weight:700;font-size:.97rem}
+    .modal-header .btn-close{filter:brightness(0) invert(1)}
+    .year-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem;margin-top:.75rem}
+    .yr-chip{background:#f0f5fb;border:1.5px solid var(--border);border-radius:10px;padding:.6rem .3rem;
+      text-align:center;font-weight:700;font-size:.9rem;color:var(--navy-mid);cursor:pointer}
+    .yr-chip:hover{background:#dce8f5;border-color:var(--navy-mid)}
+    .yr-chip.used{background:#e8f0e8;border-color:#90c090;color:var(--green);cursor:default}
+  </style>
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div id="overlay">
+  <div class="ov-box"><div class="ov-spin"></div><p id="ov-msg">Please wait…</p>
+    <div class="ov-steps" id="ovSteps" style="display:none">
+      <div class="ov-step" id="ovStep1"></div><div class="ov-step" id="ovStep2"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ LOGIN SCREEN ══════════════════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo"><i class="bi bi-shield-lock-fill"></i></div>
+    <h1 class="login-title">Tax Relief Tracker</h1>
+    <p class="login-sub" id="loginSub">Sign in to continue</p>
+
+    <!-- ── Sign-in fields (shown when security IS configured) ── -->
+    <div id="loginSignInSection" style="display:none">
+      <div id="loginEmailWrap" class="login-input-group" style="display:none">
+        <label class="login-label" for="loginEmail">Your Email Address</label>
+        <input type="email" class="login-input" id="loginEmail" placeholder="you@example.com"
+               autocomplete="email" onkeydown="if(event.key==='Enter')loginNextField()"/>
+      </div>
+      <div id="loginPassWrap" class="login-input-group" style="display:none">
+        <label class="login-label" for="loginPass">Passcode</label>
+        <input type="password" class="login-input" id="loginPass" placeholder="••••••••"
+               autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/>
+      </div>
+      <div id="loginErr" class="login-err"></div>
+      <button class="login-btn" id="loginBtn" onclick="doLogin()">
+        <i class="bi bi-arrow-right-circle me-2"></i><span id="loginBtnLabel">Sign In</span>
+      </button>
+    </div>
+
+    <!-- ── First-time setup (shown when NO security is configured) ── -->
+    <div id="loginSetupSection" style="display:none">
+      <div class="login-open-note" style="margin-bottom:.85rem">
+        <i class="bi bi-info-circle me-1"></i>
+        Fresh deployment detected. Configure your access below, or skip to enter the app directly.
+      </div>
+
+      <div class="setup-panel">
+        <div class="setup-panel-title"><i class="bi bi-shield-plus"></i>Set Up Access (Recommended)</div>
+
+        <div class="login-input-group">
+          <label class="login-label" for="setupEmail">Your Email Address</label>
+          <input type="email" class="login-input" id="setupEmail" placeholder="you@gmail.com"
+                 autocomplete="email" onkeydown="if(event.key==='Enter')document.getElementById('setupPass').focus()"/>
+        </div>
+        <div class="login-input-group">
+          <label class="login-label" for="setupPass">Create a Passcode</label>
+          <input type="password" class="login-input" id="setupPass" placeholder="Min. 4 characters"
+                 autocomplete="new-password" onkeydown="if(event.key==='Enter')document.getElementById('setupConf').focus()"/>
+        </div>
+        <div class="login-input-group" style="margin-bottom:0">
+          <label class="login-label" for="setupConf">Confirm Passcode</label>
+          <input type="password" class="login-input" id="setupConf" placeholder="Repeat passcode"
+                 autocomplete="new-password" onkeydown="if(event.key==='Enter')doFirstTimeSetup()"/>
+        </div>
+        <div id="setupErr" class="login-err"></div>
+        <button class="login-btn" onclick="doFirstTimeSetup()">
+          <i class="bi bi-shield-check me-2"></i>Save &amp; Continue
+        </button>
+      </div>
+
+      <button class="login-btn-ghost" onclick="doLoginOpenAccess()">
+        <i class="bi bi-arrow-right me-1"></i>Skip — Enter without security
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-container position-fixed top-0 end-0 p-3">
+  <div id="toast" class="toast my-toast align-items-center" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body d-flex align-items-center gap-2"><i id="toast-ico" class="bi"></i><span id="toast-msg"></span></div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
+
+<!-- New YA Modal -->
+<div class="modal fade" id="newYAModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title"><i class="bi bi-folder-plus me-2"></i>Create New Year of Assessment</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body p-4">
+        <p style="font-size:.88rem;color:var(--txt-mid);margin-bottom:1rem">Creates a spreadsheet + Receipts subfolder in your Drive working folder.</p>
+        <label class="form-label" for="yaYearInput">Year of Assessment</label>
+        <input type="number" class="form-control" id="yaYearInput" placeholder="e.g. 2026" min="2000" max="2100"/>
+        <div id="yearQuickPicks" class="year-grid mt-3"></div>
+        <div id="yaCreateError" class="limit-info warn mt-3" style="display:none"></div>
+      </div>
+      <div class="modal-footer border-0 pt-0 px-4 pb-4">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn-submit" id="createYABtn" style="width:auto;padding:.55rem 1.4rem;font-size:.88rem">
+          <i class="bi bi-folder-plus me-2"></i>Create YA</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Category Modal -->
+<div class="modal fade" id="catModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title" id="catModalTitle"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body p-4">
+        <div id="catBuiltinNote" class="fallback-note" style="display:none">
+          <i class="bi bi-shield-lock me-1"></i><strong>LHDN Built-in</strong> — adjust the limit only.
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="catNameInput">Category Name</label>
+          <input type="text" class="form-control" id="catNameInput" maxlength="80"/>
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="catLimitInput">Relief Limit (RM)</label>
+          <input type="number" class="form-control" id="catLimitInput" min="0" step="0.01"/>
+        </div>
+        <div id="catDefaultRestoreWrap" style="display:none">
+          <button type="button" id="catRestoreBtn" class="btn btn-sm"
+            style="background:var(--gold-pale);border:1px solid var(--gold);color:#7a5500;font-size:.78rem;border-radius:8px">
+            <i class="bi bi-arrow-counterclockwise me-1"></i>Restore LHDN Default</button>
+        </div>
+        <div id="catError" class="limit-info warn mt-3" style="display:none"></div>
+      </div>
+      <div class="modal-footer border-0 pt-0 px-4 pb-4 d-flex justify-content-between">
+        <button type="button" id="catDeleteBtn" style="display:none;background:var(--red-pale);border:1px solid #f0b8b8;color:var(--red);font-size:.82rem;border-radius:8px;padding:.3rem .8rem;cursor:pointer;font-family:var(--ff-b)">
+          <i class="bi bi-trash3 me-1"></i>Delete</button>
+        <div class="d-flex gap-2 ms-auto">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" id="catSaveBtn" class="btn-submit" style="width:auto;padding:.5rem 1.3rem;font-size:.88rem">
+            <i class="bi bi-check2 me-1"></i>Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Receipt Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="prevTitle"><i class="bi bi-file-earmark-image me-2"></i>Receipt Preview</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="prevBody" style="padding:0;min-height:200px">
+        <div class="prev-loading"><div class="ov-spin"></div><span>Loading preview…</span></div>
+      </div>
+      <div class="prev-toolbar" id="prevToolbar" style="display:none">
+        <span id="prevFilename" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0"></span>
+        <a id="prevDriveLink" href="#" target="_blank"><i class="bi bi-box-arrow-up-right me-1"></i>Open in Drive</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Modal -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:400px">
+    <div class="modal-content">
+      <div class="modal-body">
+        <div class="confirm-icon-wrap" id="confirmIcon"><i id="confirmIconI" class="bi"></i></div>
+        <div class="confirm-title" id="confirmTitle"></div>
+        <p class="confirm-msg" id="confirmMsg"></p>
+        <div class="confirm-detail" id="confirmDetail" style="display:none"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cc" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn-co" id="confirmOkBtn">Confirm</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════ APP SHELL ══════════════════════ -->
+<header class="app-hdr">
+  <div class="hdr-inner">
+    <div class="hdr-pill"><span class="dot"></span>LHDN Tax Relief Tracker</div>
+    <h1 class="hdr-title">LHDN Tax Relief <span>Tracker</span></h1>
+    <p class="hdr-sub">Track, validate &amp; maximise your Malaysian income tax relief claims</p>
+    <div class="folder-strip">
+      <i class="bi bi-folder2-open"></i><span>Working folder:</span>
+      <a href="#" id="folderLink" target="_blank">Connecting…</a>
+    </div>
+  </div>
+</header>
+
+<div class="ya-bar">
+  <span class="ya-label"><i class="bi bi-calendar3 me-1"></i>YA</span>
+  <div class="ya-pills" id="yaPills"><span style="font-size:.82rem;color:var(--txt-lite)">Loading…</span></div>
+  <button class="btn-new-ya" onclick="openNewYAModal()"><i class="bi bi-plus-lg"></i>New Year</button>
+  <button class="btn-logout" id="logoutBtn" onclick="doLogout()" title="Sign out"><i class="bi bi-box-arrow-right"></i>Sign Out</button>
+</div>
+
+<div id="welcome-screen" style="display:none">
+  <div class="welcome-card">
+    <div class="welcome-icon"><i class="bi bi-folder-plus"></i></div>
+    <h2>Get Started</h2>
+    <p>No Year of Assessment files found. Create your first YA to begin tracking.</p>
+    <button class="btn-submit" style="max-width:240px;margin:0 auto" onclick="openNewYAModal()">
+      <i class="bi bi-plus-circle me-2"></i>Create First YA</button>
+  </div>
+</div>
+
+<div id="main-app" style="display:none">
+  <div class="main-tabs">
+    <button class="tab-btn active" data-tab="add"><i class="bi bi-plus-circle"></i>Add Expense</button>
+    <button class="tab-btn" data-tab="dashboard"><i class="bi bi-bar-chart-line"></i>Dashboard</button>
+    <button class="tab-btn" data-tab="history"><i class="bi bi-clock-history"></i>History</button>
+    <button class="tab-btn" data-tab="settings"><i class="bi bi-shield-lock"></i>Security</button>
+  </div>
+  <div class="px-3 pb-5">
+
+    <!-- ADD EXPENSE -->
+    <section id="tab-add">
+      <div id="fb-note" class="fallback-note" style="display:none"></div>
+      <div class="row g-3">
+        <div class="col-lg-7">
+          <div class="card">
+            <div class="card-hdr">
+              <div class="ico"><i class="bi bi-receipt"></i></div>
+              <div><div class="ttl">Record New Expense</div><div class="sub" id="form-ya-label">Select a YA above</div></div>
+            </div>
+            <div class="p-4">
+              <form id="exp-form" novalidate autocomplete="off">
+                <div class="row g-3">
+                  <div class="col-sm-6">
+                    <label class="form-label" for="fDate"><i class="bi bi-calendar3 me-1"></i>Date of Expense</label>
+                    <input type="date" class="form-control" id="fDate" required/>
+                  </div>
+                  <div class="col-sm-6">
+                    <label class="form-label" for="fAmount"><i class="bi bi-currency-exchange me-1"></i>Amount (RM)</label>
+                    <input type="number" class="form-control" id="fAmount" placeholder="0.00" min="0.01" step="0.01" required/>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label" for="fCategory"><i class="bi bi-tag me-1"></i>Relief Category</label>
+                    <select class="form-select" id="fCategory" required></select>
+                    <div class="limit-info" id="limitInfo"></div>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label" for="fDesc"><i class="bi bi-pencil me-1"></i>Description</label>
+                    <input type="text" class="form-control" id="fDesc" placeholder="e.g. Medical check-up at Pantai Hospital" required/>
+                  </div>
+                  <div class="col-12">
+                    <div class="upload-label-row">
+                      <label class="form-label mb-0"><i class="bi bi-paperclip me-1"></i>Receipt / Invoice</label>
+                      <span class="badge-opt">Optional</span>
+                    </div>
+                    <div class="upload-zone" id="uploadZone">
+                      <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf" onchange="onFileSelected(this)"/>
+                      <div class="uz-idle" id="uzIdle">
+                        <i class="bi bi-cloud-arrow-up uz-icon"></i>
+                        <div class="uz-title">Drag &amp; drop or click to upload</div>
+                        <div class="uz-sub">JPG · PNG · WEBP · GIF · PDF &nbsp;·&nbsp; Max 4 MB</div>
+                      </div>
+                      <div class="uz-preview" id="uzPreview" style="display:none">
+                        <div id="uzThumbWrap"></div>
+                        <div class="uz-info">
+                          <div class="uz-fname" id="uzFname"></div>
+                          <div class="uz-fsize" id="uzFsize"></div>
+                          <div class="uz-status" id="uzStatus"></div>
+                        </div>
+                        <button type="button" class="btn-clear-file" onclick="clearFile()"><i class="bi bi-x-lg"></i>Remove</button>
+                      </div>
+                    </div>
+                    <div style="font-size:.72rem;color:var(--txt-lite);margin-top:.35rem">
+                      <i class="bi bi-shield-check me-1" style="color:var(--teal)"></i>
+                      Saved to Drive → <strong>Receipts – YA <span id="uploadYaHint">—</span>/</strong>
+                    </div>
+                  </div>
+                  <div class="col-12 pt-1">
+                    <button type="submit" class="btn-submit" id="submitBtn"><i class="bi bi-cloud-upload me-2"></i>Save Expense</button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-5">
+          <div class="card h-100">
+            <div class="card-hdr">
+              <div class="ico"><i class="bi bi-list-check"></i></div>
+              <div><div class="ttl">Relief Limits Reference</div><div class="sub" id="ref-ya-sub">—</div></div>
+            </div>
+            <div class="p-3" style="max-height:520px;overflow-y:auto"><div id="refList"></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DASHBOARD -->
+    <section id="tab-dashboard" style="display:none">
+      <div id="dash-fb-note" class="fallback-note" style="display:none"></div>
+      <div class="stats-grid">
+        <div class="stat-box"><div class="sv gold" id="s-claim">RM 0</div><div class="sl">Total Claimable</div></div>
+        <div class="stat-box"><div class="sv teal" id="s-spent">RM 0</div><div class="sl">Total Recorded</div></div>
+        <div class="stat-box"><div class="sv" id="s-cats">0</div><div class="sl">Categories Used</div></div>
+        <div class="stat-box"><div class="sv" id="s-tx">0</div><div class="sl">Transactions</div></div>
+      </div>
+      <div class="d-flex align-items-center justify-content-between mb-2 px-1">
+        <div style="font-size:.78rem;font-weight:600;color:var(--txt-mid)"><i class="bi bi-tags me-1"></i>Relief Categories &amp; Progress</div>
+        <button class="btn-submit" style="width:auto;padding:.38rem .9rem;font-size:.78rem" onclick="openCatModal(null)">
+          <i class="bi bi-plus-circle me-1"></i>Add Category</button>
+      </div>
+      <div class="card">
+        <div style="overflow-x:auto">
+          <table class="rel-table">
+            <thead>
+              <tr><th>#</th><th>Category</th><th>Type</th><th style="text-align:right">Limit</th>
+                <th style="text-align:right">Recorded</th><th>Progress</th>
+                <th style="text-align:right">Claimable</th><th style="text-align:center">Edit</th></tr>
+            </thead>
+            <tbody id="rel-body"><tr><td colspan="8"><div class="empty"><i class="bi bi-bar-chart"></i><p>Loading…</p></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- HISTORY -->
+    <section id="tab-history" style="display:none">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+          <div style="font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--txt-lite)">Ledger</div>
+          <div style="font-family:var(--ff-h);font-size:1.3rem;color:var(--navy)">Transaction History</div>
+        </div>
+        <button class="btn-submit" id="refreshBtn" style="width:auto;padding:.45rem 1rem;font-size:.8rem">
+          <i class="bi bi-arrow-clockwise me-1"></i>Refresh</button>
+      </div>
+      <div class="card">
+        <div style="overflow-x:auto">
+          <table class="hist-table">
+            <thead>
+              <tr><th>Date</th><th>Description</th><th>Category</th>
+                <th style="text-align:right">Amount</th>
+                <th style="text-align:center">Receipt</th>
+                <th style="text-align:center">Delete</th></tr>
+            </thead>
+            <tbody id="hist-body"><tr><td colspan="6"><div class="empty"><i class="bi bi-inbox"></i><p>Loading…</p></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECURITY -->
+    <section id="tab-settings" style="display:none">
+      <div style="font-family:var(--ff-h);font-size:1.3rem;color:var(--navy);margin-bottom:1rem">Security &amp; Settings</div>
+
+      <div id="secBanner" class="sec-status open">
+        <i class="bi bi-shield-exclamation ico-big" id="secBannerIco"></i>
+        <div>
+          <div style="font-weight:700;font-size:.9rem" id="secBannerTitle">Open Access</div>
+          <div style="font-size:.8rem;margin-top:.15rem" id="secBannerSub">No security configured — anyone with the URL can access.</div>
+        </div>
+      </div>
+
+      <!-- Email Whitelist -->
+      <div class="card mb-3">
+        <div class="card-hdr">
+          <div class="ico"><i class="bi bi-people"></i></div>
+          <div><div class="ttl">Authorised Email Addresses</div><div class="sub">Only listed emails can log in</div></div>
+        </div>
+        <div class="p-4">
+          <div id="emailChips" style="min-height:2rem;margin-bottom:.75rem"></div>
+          <div class="d-flex gap-2">
+            <input type="email" class="form-control" id="newEmailInput" placeholder="user@gmail.com" style="font-size:.85rem"
+                   onkeydown="if(event.key==='Enter')addEmail()"/>
+            <button class="btn-submit" onclick="addEmail()" style="width:auto;padding:.55rem 1rem;font-size:.85rem;white-space:nowrap">
+              <i class="bi bi-plus-lg me-1"></i>Add</button>
+          </div>
+          <div style="font-size:.74rem;color:var(--txt-lite);margin-top:.5rem">
+            <i class="bi bi-info-circle me-1"></i>Leave empty to allow any email (passcode becomes the only gate).
+          </div>
+        </div>
+      </div>
+
+      <!-- Passcode -->
+      <div class="card mb-3">
+        <div class="card-hdr">
+          <div class="ico"><i class="bi bi-key-fill"></i></div>
+          <div><div class="ttl">Shared Passcode</div><div class="sub" id="secPassSub">All authorised users share the same passcode</div></div>
+        </div>
+        <div class="p-4">
+          <div class="row g-3">
+            <div class="col-sm-6">
+              <label class="form-label" for="secNewPass">New Passcode <span id="secPassOptional" style="color:var(--txt-lite);font-weight:400">(optional)</span></label>
+              <input type="password" class="form-control" id="secNewPass" placeholder="Leave blank to keep current" autocomplete="new-password"/>
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label" for="secConfPass">Confirm Passcode</label>
+              <input type="password" class="form-control" id="secConfPass" placeholder="Repeat new passcode" autocomplete="new-password"/>
+            </div>
+          </div>
+          <div id="secPassErr" class="limit-info warn mt-2" style="display:none"></div>
+          <div style="font-size:.74rem;color:var(--txt-lite);margin-top:.6rem">
+            <i class="bi bi-info-circle me-1"></i>Leave blank to keep the existing passcode unchanged.
+            Changing it signs out all current users.
+          </div>
+        </div>
+      </div>
+
+      <!-- Save + Clear -->
+      <div class="d-flex gap-2 flex-wrap align-items-center mb-3">
+        <button class="btn-submit" id="secSaveBtn" onclick="doSaveSecurity()" style="width:auto;padding:.6rem 1.4rem;font-size:.88rem">
+          <i class="bi bi-shield-check me-2"></i>Save Security Settings
+        </button>
+        <button onclick="doClearAllSecurity()" style="border:1.5px solid #f0b8b8;color:var(--red);border-radius:10px;font-size:.8rem;padding:.42rem .9rem;background:none;cursor:pointer;font-family:var(--ff-b)">
+          <i class="bi bi-shield-x me-1"></i>Remove All Security (Open Access)
+        </button>
+      </div>
+      <div style="font-size:.75rem;color:var(--txt-lite);margin-bottom:1.5rem">
+        <i class="bi bi-life-preserver me-1"></i>
+        Locked out? Run <code style="background:#e8edf5;border-radius:4px;padding:.1rem .4rem">resetSecurity()</code>
+        in the Apps Script editor to restore open access.
+      </div>
+
+      <!-- Distribution guide -->
+      <div class="card">
+        <div class="card-hdr">
+          <div class="ico"><i class="bi bi-share"></i></div>
+          <div><div class="ttl">How Access Works / Distributing This App</div><div class="sub">For teams and selling</div></div>
+        </div>
+        <div class="p-4">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="info-box h-100">
+                <h6><i class="bi bi-people me-1"></i>Team / Family Access</h6>
+                <ol>
+                  <li>Add each person's Gmail address to the whitelist</li>
+                  <li>Set a shared passcode and share it privately</li>
+                  <li>Share the web app URL with them</li>
+                  <li>To revoke: remove their email from the list</li>
+                  <li>To revoke everyone: change the passcode</li>
+                </ol>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="info-box h-100">
+                <h6><i class="bi bi-shop me-1"></i>Selling / Distributing</h6>
+                <ol>
+                  <li>Each buyer deploys their own copy of the script</li>
+                  <li>They set their own email list + passcode</li>
+                  <li>Their data is in their own Drive — fully isolated</li>
+                  <li>Share via GitHub or Apps Script copy link</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<footer style="text-align:center;padding:1.5rem 1rem 2rem;font-size:.72rem;color:var(--txt-lite)">
+  LHDN Tax Relief Tracker v6 &nbsp;·&nbsp; For reference only &nbsp;·&nbsp; Verify with official LHDN guidelines
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+/* ================================================================
+   LHDN Tax Relief Tracker — JS v6
+   Security: email whitelist + shared passcode → HMAC session token
+   ================================================================ */
+
+const MAX_BYTES = 4 * 1024 * 1024;
+const OK_TYPES  = ["image/jpeg","image/png","image/gif","image/webp","application/pdf"];
+const TOKEN_KEY = "lhdn_token";
+
+var S = {
+  token:      "",
+  activeYear: null,
+  availYears: [],
+  categories: [],
+  catTotals:  {},
+  fileBase64: null,
+  fileMime:   null,
+  fileName:   null,
+  secEmails:  []   // working list in Security tab (not yet saved)
+};
+
+// ── Helpers ───────────────────────────────────────────────────
+function fmt(n){ return "RM "+parseFloat(n||0).toLocaleString("en-MY",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtK(n){ n=parseFloat(n||0); return n>=1000?"RM "+(n/1000).toFixed(1).replace(/\.0$/,"")+"k":fmt(n); }
+function fmtB(b){ return b<1024?b+" B":b<1048576?(b/1024).toFixed(1)+" KB":(b/1048576).toFixed(2)+" MB"; }
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function clamp(v,max){ return Math.min(parseFloat(v)||0,max); }
+function showOv(msg,steps){
+  document.getElementById("ov-msg").textContent=msg||"Please wait…";
+  document.getElementById("ovSteps").style.display=steps?"":"none";
+  document.getElementById("overlay").classList.add("show");
+}
+function hideOv(){ document.getElementById("overlay").classList.remove("show"); }
+function ovStep(n){ var s1=document.getElementById("ovStep1"),s2=document.getElementById("ovStep2");
+  if(n===1){s1.className="ov-step active";s2.className="ov-step";}else{s1.className="ov-step done";s2.className="ov-step active";} }
+function toast(msg,type){
+  var e=document.getElementById("toast");
+  document.getElementById("toast-ico").className="bi "+(type==="err"?"bi-exclamation-triangle-fill":type==="warn"?"bi-exclamation-circle-fill":"bi-check-circle-fill");
+  document.getElementById("toast-msg").textContent=msg;
+  e.className="toast my-toast align-items-center "+(type==="err"?"err":type==="warn"?"warn":"ok");
+  bootstrap.Toast.getOrCreateInstance(e,{delay:5000}).show();
+}
+function handleAccessDenied(){
+  sessionStorage.removeItem(TOKEN_KEY); S.token="";
+  showLogin(); toast("Session expired — please sign in again.","warn");
+}
+
+// ── Confirm Dialog ────────────────────────────────────────────
+var _cb=null;
+function confirmDialog(opts){
+  var type=opts.type||"danger";
+  document.getElementById("confirmIcon").className="confirm-icon-wrap "+type;
+  document.getElementById("confirmIconI").className="bi "+(opts.icon||(type==="danger"?"bi-trash3-fill":"bi-exclamation-triangle-fill"));
+  document.getElementById("confirmTitle").textContent=opts.title||"Are you sure?";
+  document.getElementById("confirmMsg").textContent=opts.msg||"";
+  var de=document.getElementById("confirmDetail");
+  if(opts.detail){de.textContent=opts.detail;de.style.display="";}else{de.style.display="none";}
+  var ok=document.getElementById("confirmOkBtn");
+  ok.textContent=opts.okLabel||"Confirm"; ok.className="btn-co "+type;
+  _cb=opts.onOk||null;
+  new bootstrap.Modal(document.getElementById("confirmModal")).show();
+}
+document.getElementById("confirmOkBtn").addEventListener("click",function(){
+  bootstrap.Modal.getInstance(document.getElementById("confirmModal")).hide();
+  if(typeof _cb==="function")_cb(); _cb=null;
+});
+
+// ── Tabs ──────────────────────────────────────────────────────
+document.querySelectorAll(".tab-btn").forEach(function(btn){
+  btn.addEventListener("click",function(){
+    document.querySelectorAll(".tab-btn").forEach(function(b){b.classList.remove("active");});
+    btn.classList.add("active");
+    var t=btn.dataset.tab;
+    ["add","dashboard","history","settings"].forEach(function(x){document.getElementById("tab-"+x).style.display=(x===t)?"":"none";});
+    if(t==="dashboard"||t==="history") loadSummary();
+    if(t==="settings") loadSecurityUI();
+  });
+});
+
+// ══ LOGIN ═════════════════════════════════════════════════════
+function showLogin(){ document.getElementById("login-screen").classList.add("show"); }
+function hideLogin(){ document.getElementById("login-screen").classList.remove("show"); }
+
+function loginNextField(){
+  // If email field visible, tab to passcode; else submit
+  var passWrap=document.getElementById("loginPassWrap");
+  if(passWrap.style.display!=="none"){ document.getElementById("loginPass").focus(); }
+  else { doLogin(); }
+}
+
+function init(){
+  S.token = sessionStorage.getItem(TOKEN_KEY) || "";
+  showOv("Loading…");
+  google.script.run
+    .withSuccessHandler(function(r){
+      hideOv();
+      if(!r.success){ toast("Error: "+(r.message||""),"err"); return; }
+      renderLoginForm(r);
+      if(S.token){
+        loadApp(); // try cached token
+      } else {
+        showLogin();
+      }
+    })
+    .withFailureHandler(function(err){ hideOv(); toast("Connection error. Reload the page.","err"); console.error(err); })
+    .getLoginConfig();
+}
+
+function renderLoginForm(cfg){
+  var signInSection = document.getElementById("loginSignInSection");
+  var setupSection  = document.getElementById("loginSetupSection");
+  var emailWrap     = document.getElementById("loginEmailWrap");
+  var passWrap      = document.getElementById("loginPassWrap");
+  var sub           = document.getElementById("loginSub");
+  var btnLabel      = document.getElementById("loginBtnLabel");
+
+  if(cfg.isOpen){
+    // Fresh deployment — show the first-time setup panel
+    signInSection.style.display = "none";
+    setupSection.style.display  = "";
+    sub.textContent = "Welcome — first-time setup";
+    // Pre-focus the email field for convenience
+    setTimeout(function(){ var e=document.getElementById("setupEmail"); if(e)e.focus(); }, 300);
+  } else {
+    // Security already configured — show normal sign-in fields
+    setupSection.style.display  = "none";
+    signInSection.style.display = "";
+    emailWrap.style.display = cfg.requiresEmail ? "" : "none";
+    passWrap.style.display  = cfg.requiresPass  ? "" : "none";
+    if(cfg.requiresEmail && cfg.requiresPass){
+      sub.textContent="Enter your email and passcode";
+      btnLabel.textContent="Sign In";
+    } else if(cfg.requiresEmail){
+      sub.textContent="Enter your email address";
+      btnLabel.textContent="Continue";
+    } else {
+      sub.textContent="Enter the passcode";
+      btnLabel.textContent="Sign In";
+    }
+    // Auto-focus appropriate field
+    setTimeout(function(){
+      var f=cfg.requiresEmail?document.getElementById("loginEmail"):document.getElementById("loginPass");
+      if(f)f.focus();
+    },300);
+  }
+}
+
+// Called from the first-time setup panel on a fresh deployment.
+// Works without a token because checkAccess_() allows all calls
+// when no security is configured (open access mode).
+function doFirstTimeSetup(){
+  var email    = (document.getElementById("setupEmail").value || "").trim();
+  var pass     = (document.getElementById("setupPass").value  || "").trim();
+  var conf     = (document.getElementById("setupConf").value  || "").trim();
+  var errEl    = document.getElementById("setupErr");
+  errEl.style.display = "none";
+
+  // Validate
+  if(!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+    errEl.textContent="Enter a valid email address."; errEl.style.display="block"; return;
+  }
+  if(!pass || pass.length < 4){
+    errEl.textContent="Passcode must be at least 4 characters."; errEl.style.display="block"; return;
+  }
+  if(pass !== conf){
+    errEl.textContent="Passcodes do not match."; errEl.style.display="block"; return;
+  }
+
+  showOv("Saving security settings…");
+  google.script.run
+    .withSuccessHandler(function(r){
+      hideOv();
+      if(r.success){
+        // saveSecurityConfig returns a fresh token when it changes the passcode
+        S.token = r.token || "";
+        sessionStorage.setItem(TOKEN_KEY, S.token);
+        toast("Security configured! Welcome.", "ok");
+        hideLogin();
+        loadApp();
+      } else {
+        errEl.textContent = r.message || "Could not save settings.";
+        errEl.style.display = "block";
+      }
+    })
+    .withFailureHandler(function(err){
+      hideOv();
+      errEl.textContent = "Connection error: " + String(err);
+      errEl.style.display = "block";
+    })
+    // Token is "" — server allows this because no security is configured yet
+    .saveSecurityConfig("", [email], pass, conf);
+}
+
+// Skip setup — enter the app without configuring security.
+function doLoginOpenAccess(){
+  showOv("Verifying…");
+  google.script.run
+    .withSuccessHandler(function(r){
+      hideOv();
+      if(r.success){
+        S.token = r.token || "";
+        sessionStorage.setItem(TOKEN_KEY, S.token);
+        hideLogin(); loadApp();
+      }
+    })
+    .withFailureHandler(function(err){ hideOv(); toast("Connection error.","err"); })
+    .verifyLogin("", "");
+}
+
+function doLogin(){
+  var email    = (document.getElementById("loginEmail").value || "").trim();
+  var passcode = (document.getElementById("loginPass").value  || "").trim();
+  var errEl    = document.getElementById("loginErr");
+  errEl.style.display="none";
+  document.getElementById("loginBtn").disabled=true;
+  showOv("Verifying…");
+  google.script.run
+    .withSuccessHandler(function(r){
+      hideOv(); document.getElementById("loginBtn").disabled=false;
+      if(r.success){
+        S.token=r.token; sessionStorage.setItem(TOKEN_KEY,r.token);
+        hideLogin(); loadApp();
+      } else {
+        errEl.textContent=r.message||"Incorrect credentials.";
+        errEl.style.display="block";
+        document.getElementById("loginPass").value="";
+      }
+    })
+    .withFailureHandler(function(err){
+      hideOv(); document.getElementById("loginBtn").disabled=false;
+      errEl.textContent="Connection error. Please try again.";
+      errEl.style.display="block";
+    })
+    .verifyLogin(email, passcode);
+}
+
+function loadApp(){
+  showOv("Loading app…");
+  google.script.run
+    .withSuccessHandler(function(r){
+      hideOv();
+      if(r.accessDenied){ handleAccessDenied(); return; }
+      if(!r.success){ toast("Load error: "+(r.message||""),"err"); return; }
+      S.availYears=r.years||[];
+      var fl=document.getElementById("folderLink");
+      fl.textContent=r.folderName||"LHDN Tax Relief Tracker"; fl.href=r.folderUrl||"#";
+      if(!S.availYears.length){ document.getElementById("welcome-screen").style.display=""; renderYAPills(); }
+      else { document.getElementById("main-app").style.display=""; renderYAPills(); switchYA(S.availYears[0].year); }
+    })
+    .withFailureHandler(function(err){ hideOv(); toast("Connection error.","err"); console.error(err); })
+    .getAvailableYears(S.token);
+}
+
+// ── YA ────────────────────────────────────────────────────────
+function renderYAPills(){
+  var c=document.getElementById("yaPills");
+  if(!S.availYears.length){c.innerHTML="<span style='font-size:.82rem;color:var(--txt-lite)'>No years yet</span>";return;}
+  c.innerHTML=S.availYears.map(function(y){
+    return "<button class='ya-pill "+(y.year===S.activeYear?"active":"")+"' onclick='switchYA("+y.year+")'><span class='dot-a'></span>YA "+y.year+"</button>";
+  }).join("");
+}
+function switchYA(year){
+  S.activeYear=year; renderYAPills();
+  document.getElementById("form-ya-label").textContent="Filing for YA "+year;
+  document.getElementById("ref-ya-sub").textContent="YA "+year+" limits";
+  document.getElementById("uploadYaHint").textContent=year;
+  document.getElementById("welcome-screen").style.display="none";
+  document.getElementById("main-app").style.display="";
+  loadSummary();
+}
+
+function openNewYAModal(){
+  var nxt=S.availYears.length>0?S.availYears[0].year+1:new Date().getFullYear();
+  document.getElementById("yaYearInput").value=nxt;
+  document.getElementById("yaCreateError").style.display="none";
+  var used=S.availYears.map(function(y){return y.year;}), base=new Date().getFullYear(), html="";
+  for(var y=base-1;y<=base+3;y++){
+    var u=used.indexOf(y)!==-1;
+    html+="<div class='yr-chip "+(u?"used":"")+"'"+(u?" title='Already exists'":" onclick='document.getElementById(\"yaYearInput\").value="+y+"'")+">"+(u?"✓ ":"")+"YA "+y+"</div>";
+  }
+  document.getElementById("yearQuickPicks").innerHTML=html;
+  new bootstrap.Modal(document.getElementById("newYAModal")).show();
+}
+document.getElementById("createYABtn").addEventListener("click",function(){
+  var yr=parseInt(document.getElementById("yaYearInput").value,10), ee=document.getElementById("yaCreateError");
+  if(!yr||yr<1990||yr>2100){ee.textContent="Enter a valid 4-digit year.";ee.style.display="block";return;}
+  ee.style.display="none"; this.disabled=true; showOv("Creating YA "+yr+"…");
+  var btn=this;
+  google.script.run
+    .withSuccessHandler(function(r){
+      hideOv(); btn.disabled=false;
+      if(r.accessDenied){handleAccessDenied();return;}
+      if(r.success){bootstrap.Modal.getInstance(document.getElementById("newYAModal")).hide();toast("YA "+r.year+" created!","ok");S.availYears.unshift({year:r.year,name:"YA "+r.year,id:r.id,url:r.url});S.availYears.sort(function(a,b){return b.year-a.year;});switchYA(r.year);}
+      else{ee.textContent=r.message||"Failed.";ee.style.display="block";}
+    })
+    .withFailureHandler(function(err){hideOv();btn.disabled=false;ee.textContent=String(err);ee.style.display="block";})
+    .createNewYA(S.token,yr);
+});
+
+// ── Summary ───────────────────────────────────────────────────
+function loadSummary(){
+  if(!S.activeYear)return;
+  showOv("Loading YA "+S.activeYear+"…");
+  google.script.run
+    .withSuccessHandler(function(r){
+      hideOv();
+      if(r.accessDenied){handleAccessDenied();return;}
+      if(!r.success){toast("Load error: "+(r.message||""),"err");return;}
+      S.categories=r.categories||[]; S.catTotals=r.totals||{};
+      renderDashboard(r); renderHistory(r.rows||[]); buildCatDropdown(); showFbNote(r); checkLimitInfo();
+    })
+    .withFailureHandler(function(err){hideOv();toast("Connection error.","err");console.error(err);})
+    .getReliefSummary(S.token,S.activeYear);
+}
+
+function buildCatDropdown(){
+  var sel=document.getElementById("fCategory"),cur=sel.value;
+  sel.innerHTML="<option value='' disabled selected>— Select a category —</option>";
+  var html="";
+  S.categories.forEach(function(c){
+    if(c.limit<0)return;
+    var spent=S.catTotals[c.name]||0,pct=c.limit>0?Math.round(Math.min(spent/c.limit,1)*100):0;
+    var o=document.createElement("option"); o.value=c.name; o.textContent=c.name+" (max "+fmt(c.limit)+")";
+    if(cur===c.name)o.selected=true; sel.appendChild(o);
+    html+="<div style='display:flex;justify-content:space-between;padding:.42rem 0;border-bottom:1px solid #eef1f6;font-size:.79rem;gap:.5rem'>"
+      +"<span style='color:var(--txt-mid);flex:1'>"+esc(c.name)+"</span>"
+      +"<div style='text-align:right'><div style='font-weight:700;color:var(--navy)'>"+fmt(c.limit)+"</div>"
+      +(spent>0?"<div style='font-size:.7rem;color:var(--txt-lite)'>"+fmt(spent)+" ("+pct+"%)</div>":"")+"</div></div>";
+  });
+  document.getElementById("refList").innerHTML=html;
+}
+
+function showFbNote(r){
+  var m=(!r.knownYear)?"<i class='bi bi-info-circle me-1'></i>No LHDN limits for YA "+r.year+". Showing YA "+r.fallbackYear+" as reference.":"";
+  ["fb-note","dash-fb-note"].forEach(function(id){var e=document.getElementById(id);e.innerHTML=m;e.style.display=m?"":"none";});
+}
+
+// ── Dashboard ─────────────────────────────────────────────────
+function renderDashboard(data){
+  var cats=data.categories||[],totals=data.totals||{},rows=data.rows||[];
+  var tC=0,tS=0,cU=0,html="",idx=0;
+  cats.forEach(function(c){
+    idx++;var spent=totals[c.name]||0,claim=clamp(spent,c.limit),pct=c.limit>0?Math.min((spent/c.limit)*100,100):0;
+    var isO=spent>c.limit,isC=claim>=c.limit&&c.limit>0; tC+=claim;tS+=spent;if(spent>0)cU++;
+    var chip=c.type==="Custom"?"<span class='type-chip custom'>Custom</span>":"<span class='type-chip builtin'>LHDN</span>";
+    html+="<tr><td style='color:var(--txt-lite);font-size:.72rem'>"+idx+"</td><td style='font-weight:500;min-width:160px'>"+esc(c.name)+"</td><td>"+chip+"</td>"
+      +"<td style='text-align:right;white-space:nowrap;color:var(--txt-mid)'>"+fmt(c.limit)+"</td>"
+      +"<td style='text-align:right;white-space:nowrap;font-weight:"+(spent>0?600:400)+";color:"+(isO?"var(--red)":(spent>0?"var(--navy)":"var(--txt-lite)"))+";'>"+(spent>0?fmt(spent):"—")+"</td>"
+      +"<td style='min-width:90px'><div class='prog-wrap'><div class='prog-fill "+(isO?"over":"")+"' style='width:"+pct+"%'></div></div><div style='font-size:.67rem;color:var(--txt-lite);margin-top:2px'>"+Math.round(pct)+"%</div></td>"
+      +"<td style='text-align:right'><span class='claim-badge "+(isC?"capped":"")+"'>"+(claim>0?fmt(claim):"—")+"</span></td>"
+      +"<td style='text-align:center'><button class='btn-edit-cat' onclick='openCatModal("+JSON.stringify(c)+")'><i class='bi bi-pencil'></i></button></td>"
+    +"</tr>";
+  });
+  html+="<tr style='background:#f5f7fa;font-weight:700;border-top:2px solid var(--border)'><td></td><td style='font-size:.76rem;letter-spacing:.04em;text-transform:uppercase;color:var(--txt-lite)'>TOTAL</td><td></td><td></td><td style='text-align:right;color:var(--teal)'>"+fmt(tS)+"</td><td></td><td style='text-align:right'><span class='claim-badge capped'>"+fmt(tC)+"</span></td><td></td></tr>";
+  document.getElementById("rel-body").innerHTML=html;
+  document.getElementById("s-claim").textContent=fmtK(tC);document.getElementById("s-spent").textContent=fmtK(tS);
+  document.getElementById("s-cats").textContent=cU+"/"+cats.length;document.getElementById("s-tx").textContent=rows.length;
+}
+
+// ── Category Modal ────────────────────────────────────────────
+var _catEdit=null;
+function openCatModal(cat){
+  _catEdit=cat;var isE=!!cat,isB=cat&&cat.type==="LHDN Built-in";
+  document.getElementById("catModalTitle").innerHTML=(isE?"<i class='bi bi-pencil me-2'></i>Edit Category":"<i class='bi bi-plus-circle me-2'></i>Add Custom Category");
+  document.getElementById("catBuiltinNote").style.display=isB?"":"none";
+  document.getElementById("catNameInput").value=isE?cat.name:"";document.getElementById("catNameInput").disabled=isB;
+  document.getElementById("catLimitInput").value=isE?cat.limit:"";
+  document.getElementById("catError").style.display="none";
+  document.getElementById("catDeleteBtn").style.display=(isE&&!isB)?"":"none";
+  document.getElementById("catDefaultRestoreWrap").style.display=isB?"":"none";
+  new bootstrap.Modal(document.getElementById("catModal")).show();
+}
+document.getElementById("catSaveBtn").addEventListener("click",function(){
+  var name=document.getElementById("catNameInput").value.trim(),limit=document.getElementById("catLimitInput").value,ee=document.getElementById("catError");
+  if(!name){ee.textContent="Name is required.";ee.style.display="block";return;}
+  if(limit===""||isNaN(parseFloat(limit))){ee.textContent="Enter a valid limit.";ee.style.display="block";return;}
+  ee.style.display="none";this.disabled=true;showOv("Saving…");var btn=this;
+  google.script.run
+    .withSuccessHandler(function(r){hideOv();btn.disabled=false;if(r.accessDenied){handleAccessDenied();return;}if(r.success){bootstrap.Modal.getInstance(document.getElementById("catModal")).hide();toast(r.message,"ok");loadSummary();}else{ee.textContent=r.message;ee.style.display="block";}})
+    .withFailureHandler(function(err){hideOv();btn.disabled=false;ee.textContent=String(err);ee.style.display="block";})
+    .saveCategory(S.token,S.activeYear,{name:name,limit:parseFloat(limit),oldName:_catEdit?_catEdit.name:""});
+});
+document.getElementById("catDeleteBtn").addEventListener("click",function(){
+  if(!_catEdit)return;
+  confirmDialog({type:"danger",icon:"bi-tag",title:"Delete Category?",msg:"Delete \""+_catEdit.name+"\"?",
+    detail:"Existing expenses using this category remain but won't show in the dashboard.",
+    okLabel:"Yes, Delete",onOk:function(){
+      showOv("Deleting…");var btn=document.getElementById("catDeleteBtn");btn.disabled=true;
+      google.script.run
+        .withSuccessHandler(function(r){hideOv();btn.disabled=false;if(r.accessDenied){handleAccessDenied();return;}if(r.success){bootstrap.Modal.getInstance(document.getElementById("catModal")).hide();toast(r.message,"ok");loadSummary();}else{toast(r.message,"err");}})
+        .withFailureHandler(function(err){hideOv();btn.disabled=false;toast(String(err),"err");})
+        .deleteCategory(S.token,S.activeYear,_catEdit.name);
+    }});
+});
+document.getElementById("catRestoreBtn").addEventListener("click",function(){
+  if(!_catEdit)return;
+  confirmDialog({type:"info",icon:"bi-arrow-counterclockwise",title:"Restore Default Limit?",
+    msg:"Reset \""+_catEdit.name+"\" to the official LHDN value?",okLabel:"Yes, Restore",onOk:function(){
+      showOv("Restoring…");var btn=document.getElementById("catRestoreBtn");btn.disabled=true;
+      google.script.run
+        .withSuccessHandler(function(r){hideOv();btn.disabled=false;if(r.accessDenied){handleAccessDenied();return;}if(r.success){bootstrap.Modal.getInstance(document.getElementById("catModal")).hide();toast("Default restored.","ok");loadSummary();}else{toast(r.message,"err");}})
+        .withFailureHandler(function(err){hideOv();btn.disabled=false;toast(String(err),"err");})
+        .restoreDefaultLimit(S.token,S.activeYear,_catEdit.name);
+    }});
+});
+
+// ── Preview ───────────────────────────────────────────────────
+function extractFileId(url){
+  var m=String(url||"").match(/\/d\/([a-zA-Z0-9_-]{10,})/); if(m)return m[1];
+  m=String(url||"").match(/[?&]id=([a-zA-Z0-9_-]{10,})/); return m?m[1]:null;
+}
+function previewReceipt(url,filename){
+  if(!url)return;
+  var fid=extractFileId(url),isPdf=(filename||"").toLowerCase().endsWith(".pdf");
+  var body=document.getElementById("prevBody"),toolbar=document.getElementById("prevToolbar");
+  document.getElementById("prevTitle").innerHTML="<i class='bi bi-file-earmark-"+(isPdf?"pdf":"image")+"' style='margin-right:.5rem'></i>"+esc(filename||"Receipt");
+  document.getElementById("prevFilename").textContent=filename||"";
+  document.getElementById("prevDriveLink").href=url;
+  body.innerHTML="<div class='prev-loading'><div class='ov-spin'></div><span>Loading preview…</span></div>";
+  toolbar.style.display="";
+  if(!fid){body.innerHTML="<div class='prev-loading'><span>Cannot read file ID. <a href='"+esc(url)+"' target='_blank' style='color:var(--gold-lt)'>Open in Drive →</a></span></div>";return;}
+  if(isPdf){var i=document.createElement("iframe");i.className="prev-pdf";i.allow="autoplay";i.src="https://drive.google.com/file/d/"+fid+"/preview";setTimeout(function(){body.innerHTML="";body.appendChild(i);},350);}
+  else{var img=new Image();img.className="prev-img";img.onload=function(){body.innerHTML="";body.appendChild(img);};img.onerror=function(){body.innerHTML="<div class='prev-loading'><span>Could not load image. <a href='"+esc(url)+"' target='_blank' style='color:var(--gold-lt)'>Open in Drive →</a></span></div>";};img.src="https://drive.google.com/thumbnail?id="+fid+"&sz=w1200";}
+  new bootstrap.Modal(document.getElementById("previewModal")).show();
+}
+document.getElementById("previewModal").addEventListener("hidden.bs.modal",function(){
+  document.getElementById("prevBody").innerHTML="<div class='prev-loading'><div class='ov-spin'></div><span>Loading preview…</span></div>";
+  document.getElementById("prevToolbar").style.display="none";
+});
+
+// ── History ───────────────────────────────────────────────────
+function renderHistory(rows){
+  var tb=document.getElementById("hist-body");
+  if(!rows||!rows.length){tb.innerHTML="<tr><td colspan='6'><div class='empty'><i class='bi bi-inbox'></i><p>No transactions for YA "+S.activeYear+"</p></div></td></tr>";return;}
+  var html="";
+  rows.forEach(function(r){
+    var short=r.category.length>35?r.category.slice(0,35)+"…":r.category;
+    var rc=r.receiptUrl?"<button class='btn-preview' onclick='previewReceipt(\""+esc(r.receiptUrl)+"\",\""+esc(r.receiptName||"receipt")+"\")'><i class='bi bi-eye me-1'></i>Preview</button>":"<span class='no-receipt'>—</span>";
+    html+="<tr><td style='white-space:nowrap;color:var(--txt-mid)'>"+esc(r.date)+"</td>"
+      +"<td style='max-width:155px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap' title='"+esc(r.description)+"'>"+esc(r.description)+"</td>"
+      +"<td><span class='cat-tag' title='"+esc(r.category)+"'>"+esc(short)+"</span></td>"
+      +"<td style='text-align:right;font-weight:600;white-space:nowrap'>"+fmt(r.amount)+"</td>"
+      +"<td style='text-align:center'>"+rc+"</td>"
+      +"<td style='text-align:center'><button class='btn-del' onclick='deleteRow("+r.sheetRow+",this)'><i class='bi bi-trash3'></i></button></td>"
+    +"</tr>";
+  });
+  tb.innerHTML=html;
+}
+
+// ── Limit Info ────────────────────────────────────────────────
+function checkLimitInfo(){
+  var cat=document.getElementById("fCategory").value,amount=parseFloat(document.getElementById("fAmount").value)||0;
+  var info=document.getElementById("limitInfo"),co=S.categories.find(function(c){return c.name===cat;});
+  if(!co){info.style.display="none";return;}
+  var lim=co.limit,ex=S.catTotals[cat]||0,proj=ex+amount,rem=Math.max(lim-ex,0);
+  info.style.display="";
+  if(proj>lim){info.className="limit-info warn";info.innerHTML="<i class='bi bi-exclamation-triangle-fill me-1'></i><strong>Limit Exceeded!</strong> "+fmt(ex)+" + "+fmt(amount)+" = "+fmt(proj)+". Only <strong>"+fmt(lim)+"</strong> claimable.";}
+  else{info.className="limit-info ok";info.innerHTML="<i class='bi bi-info-circle-fill me-1'></i>Limit: "+fmt(lim)+" · Recorded: "+fmt(ex)+" · Headroom: <strong>"+fmt(rem)+"</strong>";}
+}
+document.getElementById("fCategory").addEventListener("change",checkLimitInfo);
+document.getElementById("fAmount").addEventListener("input",checkLimitInfo);
+
+// ── Upload Zone ───────────────────────────────────────────────
+var uz=document.getElementById("uploadZone");
+uz.addEventListener("dragover",function(e){e.preventDefault();if(!uz.classList.contains("has-file"))uz.classList.add("drag-over");});
+uz.addEventListener("dragleave",function(){uz.classList.remove("drag-over");});
+uz.addEventListener("drop",function(e){e.preventDefault();uz.classList.remove("drag-over");if(uz.classList.contains("has-file"))return;if(e.dataTransfer.files.length)processFile(e.dataTransfer.files[0]);});
+function onFileSelected(inp){if(inp.files&&inp.files.length)processFile(inp.files[0]);}
+function processFile(file){
+  if(OK_TYPES.indexOf(file.type)===-1){setUzSt("Unsupported type.","warn");return;}
+  if(file.size>MAX_BYTES){setUzSt("Too large ("+fmtB(file.size)+"). Max 4 MB.","warn");return;}
+  document.getElementById("uzFname").textContent=file.name;document.getElementById("uzFsize").textContent=fmtB(file.size);
+  document.getElementById("uzIdle").style.display="none";document.getElementById("uzPreview").style.display="";
+  uz.classList.add("has-file");
+  var tw=document.getElementById("uzThumbWrap");
+  if(file.type.startsWith("image/")){var img=document.createElement("img");img.className="uz-thumb";img.src=URL.createObjectURL(file);tw.innerHTML="";tw.appendChild(img);}
+  else{tw.innerHTML="<div class='uz-pdf-icon'><i class='bi bi-file-earmark-pdf-fill'></i></div>";}
+  document.getElementById("submitBtn").disabled=true;setUzSt("Reading file…","");
+  var reader=new FileReader();
+  reader.onload=function(e){S.fileBase64=e.target.result.split(",")[1];S.fileMime=file.type;S.fileName=file.name;setUzSt("✓ Ready to attach","");document.getElementById("submitBtn").disabled=false;};
+  reader.onerror=function(){setUzSt("Read failed. Try again.","warn");S.fileBase64=null;S.fileMime=null;S.fileName=null;document.getElementById("submitBtn").disabled=false;};
+  reader.readAsDataURL(file);
+}
+function setUzSt(m,t){var e=document.getElementById("uzStatus");e.textContent=m;e.className="uz-status"+(t==="warn"?" warn":"");}
+function clearFile(){S.fileBase64=S.fileMime=S.fileName=null;document.getElementById("fileInput").value="";document.getElementById("uzIdle").style.display="";document.getElementById("uzPreview").style.display="none";uz.classList.remove("has-file","drag-over");document.getElementById("uzThumbWrap").innerHTML="";document.getElementById("submitBtn").disabled=false;}
+
+// ── Save Expense (two-step) ───────────────────────────────────
+document.getElementById("exp-form").addEventListener("submit",function(e){
+  e.preventDefault();
+  var date=document.getElementById("fDate").value,amount=document.getElementById("fAmount").value;
+  var cat=document.getElementById("fCategory").value,desc=document.getElementById("fDesc").value.trim();
+  if(!S.activeYear){toast("Select a Year of Assessment first.","err");return;}
+  if(!date||!amount||!cat||!desc){toast("Please fill in all required fields.","err");return;}
+  if(parseFloat(amount)<=0){toast("Amount must be greater than zero.","err");return;}
+  var hasR=!!(S.fileBase64&&S.fileMime&&S.fileName);
+  showOv("Step 1 of "+(hasR?"2":"1")+": Saving expense…",hasR); if(hasR)ovStep(1);
+  document.getElementById("submitBtn").disabled=true;
+  google.script.run
+    .withSuccessHandler(function(r1){
+      if(r1.accessDenied){hideOv();document.getElementById("submitBtn").disabled=false;handleAccessDenied();return;}
+      if(!r1.success){hideOv();document.getElementById("submitBtn").disabled=false;toast("Save failed: "+(r1.message||""),"err");return;}
+      if(!hasR){hideOv();document.getElementById("submitBtn").disabled=false;toast("Expense saved!","ok");resetForm();loadSummary();return;}
+      showOv("Step 2 of 2: Uploading receipt…",true);ovStep(2);
+      var b64=S.fileBase64,mime=S.fileMime,name=S.fileName,ssId=r1.ssId||"";
+      google.script.run
+        .withSuccessHandler(function(r2){hideOv();document.getElementById("submitBtn").disabled=false;if(r2.accessDenied){handleAccessDenied();return;}if(r2.success){toast(r2.sheetUpdated?"Expense saved with receipt!":"Receipt in Drive. Refresh to see link.","ok");}else{toast("Expense saved. Receipt failed: "+(r2.message||""),"warn");}resetForm();loadSummary();})
+        .withFailureHandler(function(err2){hideOv();document.getElementById("submitBtn").disabled=false;toast("Expense saved. Receipt error: "+String(err2),"warn");resetForm();loadSummary();})
+        .uploadReceiptForRow(S.token,S.activeYear,r1.sheetRow,ssId,b64,mime,name);
+    })
+    .withFailureHandler(function(err1){hideOv();document.getElementById("submitBtn").disabled=false;toast("Save failed: "+String(err1),"err");})
+    .saveExpenseRow(S.token,{year:S.activeYear,date:date,amount:parseFloat(amount),category:cat,description:desc});
+});
+
+function resetForm(){
+  document.getElementById("exp-form").reset();
+  document.getElementById("fDate").valueAsDate=new Date();
+  document.getElementById("limitInfo").style.display="none";
+  clearFile();
+}
+
+// ── Delete ────────────────────────────────────────────────────
+function deleteRow(row,btn){
+  confirmDialog({type:"danger",icon:"bi-trash3-fill",title:"Delete Expense Record?",
+    msg:"This record will be permanently removed.",
+    detail:"If a receipt is attached, the file will also be deleted from Google Drive.",
+    okLabel:"Yes, Delete",onOk:function(){
+      showOv("Deleting…");btn.disabled=true;
+      google.script.run
+        .withSuccessHandler(function(r){hideOv();if(r.accessDenied){handleAccessDenied();return;}if(r.success){toast(r.message||"Record deleted.","ok");loadSummary();}else{toast("Delete failed: "+(r.message||""),"err");btn.disabled=false;}})
+        .withFailureHandler(function(err){hideOv();toast("Delete error: "+String(err),"err");btn.disabled=false;})
+        .deleteExpense(S.token,row,S.activeYear);
+    }});
+}
+document.getElementById("refreshBtn").addEventListener("click",loadSummary);
+
+// ══ SECURITY TAB ══════════════════════════════════════════════
+function loadSecurityUI(){
+  google.script.run
+    .withSuccessHandler(function(r){
+      if(!r.success||r.accessDenied)return;
+      S.secEmails=r.allowedEmails.slice();
+      renderEmailChips();
+      // Update banner
+      var banner=document.getElementById("secBanner");
+      var ico=document.getElementById("secBannerIco");
+      var title=document.getElementById("secBannerTitle");
+      var sub=document.getElementById("secBannerSub");
+      if(r.requiresEmail && r.requiresPass){
+        banner.className="sec-status secured"; ico.className="bi bi-shield-check ico-big";
+        title.textContent="Fully Secured"; sub.textContent="Email whitelist + passcode both active.";
+      } else if(r.requiresEmail || r.requiresPass){
+        banner.className="sec-status partial"; ico.className="bi bi-shield-half ico-big";
+        title.textContent="Partially Secured";
+        sub.textContent=r.requiresEmail?"Email whitelist active (no passcode).":"Passcode active (no email whitelist).";
+      } else {
+        banner.className="sec-status open"; ico.className="bi bi-shield-exclamation ico-big";
+        title.textContent="Open Access"; sub.textContent="No security configured.";
+      }
+    })
+    .withFailureHandler(function(){})
+    .getSecurityConfig(S.token);
+}
+
+function renderEmailChips(){
+  var c=document.getElementById("emailChips");
+  if(!S.secEmails.length){c.innerHTML="<span style='font-size:.82rem;color:var(--txt-lite)'>No email restrictions — anyone can log in with the passcode</span>";return;}
+  c.innerHTML=S.secEmails.map(function(e,i){
+    return "<span class='email-chip'>"+esc(e)
+      +"<button onclick='removeEmail("+i+")' title='Remove'>&times;</button></span>";
+  }).join("");
+}
+function addEmail(){
+  var inp=document.getElementById("newEmailInput"), email=inp.value.trim().toLowerCase();
+  if(!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){toast("Enter a valid email address.","err");return;}
+  if(S.secEmails.indexOf(email)!==-1){toast("Already in the list.","warn");return;}
+  S.secEmails.push(email); inp.value=""; renderEmailChips();
+}
+function removeEmail(i){ S.secEmails.splice(i,1); renderEmailChips(); }
+
+function doSaveSecurity(){
+  var newPass=document.getElementById("secNewPass").value;
+  var confPass=document.getElementById("secConfPass").value;
+  var ee=document.getElementById("secPassErr"); ee.style.display="none";
+  if(newPass && newPass.trim().length < 4){
+    ee.textContent="Passcode must be at least 4 characters."; ee.style.display="block"; return;
+  }
+  if(newPass && newPass!==confPass){
+    ee.textContent="Passcodes do not match."; ee.style.display="block"; return;
+  }
+  showOv("Saving security settings…"); document.getElementById("secSaveBtn").disabled=true;
+  google.script.run
+    .withSuccessHandler(function(r){
+      hideOv(); document.getElementById("secSaveBtn").disabled=false;
+      document.getElementById("secNewPass").value=""; document.getElementById("secConfPass").value="";
+      if(r.accessDenied){handleAccessDenied();return;}
+      if(r.success){
+        if(r.token){ S.token=r.token; sessionStorage.setItem(TOKEN_KEY,r.token); }
+        toast(r.message,"ok"); loadSecurityUI();
+      } else { ee.textContent=r.message; ee.style.display="block"; }
+    })
+    .withFailureHandler(function(err){hideOv();document.getElementById("secSaveBtn").disabled=false;ee.textContent=String(err);ee.style.display="block";})
+    .saveSecurityConfig(S.token, S.secEmails, newPass, confPass);
+}
+
+function doClearAllSecurity(){
+  confirmDialog({type:"warning",icon:"bi-shield-x",title:"Remove All Security?",
+    msg:"Anyone with the app URL will be able to access this application.",
+    detail:"You can reconfigure security at any time in this tab.",
+    okLabel:"Yes, Remove All",onOk:function(){
+      showOv("Removing security…");
+      google.script.run
+        .withSuccessHandler(function(r){hideOv();if(r.accessDenied){handleAccessDenied();return;}if(r.success){S.secEmails=[];toast(r.message,"ok");loadSecurityUI();}else{toast(r.message,"err");}})
+        .withFailureHandler(function(err){hideOv();toast(String(err),"err");})
+        .clearAllSecurity(S.token);
+    }});
+}
+
+// ── Logout ────────────────────────────────────────────────────
+function doLogout(){
+  confirmDialog({
+    type:    "info",
+    icon:    "bi-box-arrow-right",
+    title:   "Sign Out?",
+    msg:     "You will be returned to the login screen.",
+    okLabel: "Sign Out",
+    onOk: function(){
+      sessionStorage.removeItem(TOKEN_KEY);
+      S.token = "";
+      // Reset main app state
+      document.getElementById("main-app").style.display="none";
+      document.getElementById("welcome-screen").style.display="none";
+      // Reset active tab to Add Expense for next login
+      document.querySelectorAll(".tab-btn").forEach(function(b){b.classList.remove("active");});
+      document.querySelector(".tab-btn[data-tab='add']").classList.add("add");
+      ["dashboard","history","settings"].forEach(function(t){
+        document.getElementById("tab-"+t).style.display="none";
+      });
+      document.getElementById("tab-add").style.display="";
+      // Re-fetch login config so form renders correctly
+      google.script.run
+        .withSuccessHandler(function(r){ if(r.success) renderLoginForm(r); showLogin(); })
+        .withFailureHandler(function(){ showLogin(); })
+        .getLoginConfig();
+    }
+  });
+}
+
+// ── Boot ──────────────────────────────────────────────────────
+document.getElementById("fDate").valueAsDate=new Date();
+init();
+</script>
+</body>
+</html>
